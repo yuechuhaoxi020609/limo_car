@@ -96,13 +96,15 @@ darknet_ros_EXTERNAL_OBJECTS =
 /home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/lib/aarch64-linux-gnu/libICE.so
 /home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/lib/aarch64-linux-gnu/libX11.so
 /home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/lib/aarch64-linux-gnu/libXext.so
-/home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/local/cuda-10.2/lib64/libcudart.so
+/home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/local/cuda-10.2/lib64/libcudart_static.a
+/home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/lib/aarch64-linux-gnu/librt.so
 /home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /home/agilex/agilex_ws/devel/lib/libdarknet_ros_lib.so
 /home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/lib/aarch64-linux-gnu/libSM.so
 /home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/lib/aarch64-linux-gnu/libICE.so
 /home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/lib/aarch64-linux-gnu/libX11.so
 /home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/lib/aarch64-linux-gnu/libXext.so
-/home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/local/cuda-10.2/lib64/libcudart.so
+/home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/local/cuda-10.2/lib64/libcudart_static.a
+/home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/lib/aarch64-linux-gnu/librt.so
 /home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/lib/aarch64-linux-gnu/libopencv_shape.so.3.2.0
 /home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/lib/aarch64-linux-gnu/libopencv_stitching.so.3.2.0
 /home/agilex/agilex_ws/devel/lib/darknet_ros/darknet_ros: /usr/lib/aarch64-linux-gnu/libopencv_superres.so.3.2.0

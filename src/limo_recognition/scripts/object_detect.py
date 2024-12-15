@@ -22,7 +22,7 @@ VALUE_HIGH   = 255
 class image_converter:
     def __init__(self):    
     # 创建cv_bridge，声明图像的发布者和订阅者
-      self.bridge=CvBridge()	#ROS图像和OpenCV图像信息的转换
+      self.bridge=CvBridge()	#ROS图像和OpenCV图像信息的
       self.image_sub=rospy.Subscriber("/camera/color/image_raw", Image, self.visual_callback)	#订阅Image，Camera的话题
       self.depth_sub=rospy.Subscriber("/camera/depth/image_raw",Image,self.depth_callback)    # 获取深度信息
       self.camera_info_sub = rospy.Subscriber("/camera/color/camera_info",CameraInfo,self.camera_info_callback)   # 获取相机内参
@@ -41,17 +41,14 @@ class image_converter:
         cv_image = cv2.cvtColor(image_input,cv2.COLOR_BGR2HSV)  #将获得的bgr图转化为hsv图，这样更利于我们在真实环境中识别物体
         # print("Size of image:", cv_image.shape) #(480,640,3)
 
-        # define the list of boundaries in BGR 
-        boundaries = [([HUE_LOW, SATURATION_LOW, VALUE_LOW], [HUE_HIGH,SATURATION_HIGH,VALUE_HIGH])]	#识别颜色的范围值BGR
-
-        # loop over the boundaries
-        for (lower, upper) in boundaries:
-            # create NumPy arrays from the boundaries
-            lower = np.array(lower, dtype = "uint8")
-            upper = np.array(upper, dtype = "uint8")
-
+        lower1 = np.array([0, 150, 150])
+        upper1 = np.array([10, 255, 255])
+        lower2 = np.array([170, 150, 150])
+        upper2 = np.array([180, 255, 255])
         # find the colors within the specified boundaries and apply the mask
-        mask = cv2.inRange(cv_image, lower, upper)      # mask中颜色区域内的像素值为255，其他区域像素值为0，lower表示每个通道的下界
+        mask1 = cv2.inRange(cv_image, lower1, upper2)    
+        mask2 = cv2.inRange(cv_image, lower1, upper2)
+        mask = cv2.bitwise_or(mask1, mask2)
 
         kernel = np.ones((3, 3), np.uint8)
         mask = cv2.erode(mask, kernel, iterations=1)
@@ -65,19 +62,32 @@ class image_converter:
             x, y, w, h, area = stats[i]
             
             # 筛选符合条件的联通块
-            if area >= 400 and w >= 10 and h >= 10:
-                components.append((x, y, w, h))
+            if area >= 200 and w >= 5 and h >= 5:
+                components.append((x, y, w, h, area))
                 centroids_list.append((int(centroids[i][0]), int(centroids[i][1])))
 
-        for (x, y, w, h) in components:
+        print(len(centroids_list))
+
+        if len(centroids_list) >= 1:
+            sorted_pairs = sorted(zip(components, centroids_list), key=lambda x: x[0][4], reverse=True)
+            components, centroids_list = zip(*sorted_pairs)
+            components, centroids_list = list(components), list(centroids_list)
+
+        for (x, y, w, h, area) in components[:1]:
             cv2.rectangle(image_input, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        for (cX, cY) in centroids:
-            cv2.circle(image_input, (cX, cY), 5, (255, 0, 0), -1)
+
+        for (cX, cY) in centroids_list[:1]:
+            cX, cY = int(cX), int(cY)
             cX = cX if cX < 400 else 399
             cY = cY if cY < 640 else 639
-	        # 获取对应质心的深度信息
+            cv2.circle(image_input, (cX, cY), 5, (255, 0, 0), -1)
+
+        if len(centroids_list) >= 1:
+            (cX, cY) = centroids_list[0]
+            cX, cY = int(cX), int(cY)
+            cX = cX if cX < 400 else 399
+            cY = cY if cY < 640 else 639
             depth = self.depth_image[cX,cY]
-            # rospy.loginfo("Robot detecting: get a target with depth "+str(depth)+"m")
 
             # 计算物体在相机坐标系中的位置,像素坐标系-->相机坐标系
             point_camera = PointStamped()
@@ -87,10 +97,13 @@ class image_converter:
             point_camera.point.z = depth
 
             # 使用tf2将点从相机坐标系转换到世界坐标系
-            point_world = self.tf_buffer.transform(point_camera,"odom")
+            # point_world = self.tf_buffer.transform(point_camera,"odom")
 
             # 发布目标位置
-            self.target_pub.publish(point_world)
+            
+            
+            self.target_pub.publish(point_camera)
+            print(point_camera.point.x)
 
         # 显示Opencv格式的图像
         cv2.imshow("Image window", image_input)
@@ -111,11 +124,13 @@ class image_converter:
 
 
 
+
 if __name__ == '__main__':
     try:
         # 初始化ros节点
         rospy.init_node("object_detect")
         rospy.loginfo("Starting detect object")
+        
         image_converter()
         rospy.spin()
     except KeyboardInterrupt:
