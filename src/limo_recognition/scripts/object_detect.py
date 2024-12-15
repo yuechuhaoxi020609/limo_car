@@ -103,7 +103,7 @@ class image_converter:
         except CvBridgeError as e:
             print(e)
 
-    def depth_callback(self,data):it
+    def depth_callback(self,data):
         self.depth_image = self.bridge.imgmsg_to_cv2(data, "32FC1")  # "32FC1"表示32位浮点数单通道，常用于表示深度图像
 
     def camera_info_callback(self,data):
@@ -114,7 +114,7 @@ class image_converter:
 if __name__ == '__main__':
     try:
         # 初始化ros节点
-        rospy.init_node("object_detec
+        rospy.init_node("object_detect")
         rospy.loginfo("Starting detect object")
         image_converter()
         rospy.spin()
