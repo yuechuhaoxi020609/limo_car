@@ -38,20 +38,31 @@ class image_converter:
         except CvBridgeError as e:
             print(e)
 
-        cv_image = cv2.cvtColor(image_input,cv2.COLOR_BGR2HSV)  #将获得的bgr图转化为hsv图，这样更利于我们在真实环境中识别物体
+        mode = "hsv"
+        if mode == "hsv":
+            cv_image = cv2.cvtColor(image_input,cv2.COLOR_BGR2HSV)  #将获得的bgr图转化为hsv图，这样更利于我们在真实环境中识别物体
         # print("Size of image:", cv_image.shape) #(480,640,3)
 
-        lower1 = np.array([0, 150, 150])
-        upper1 = np.array([10, 255, 255])
-        lower2 = np.array([170, 150, 150])
-        upper2 = np.array([180, 255, 255])
+            lower1 = np.array([0, 150, 150])
+            upper1 = np.array([10, 255, 255])
+            lower2 = np.array([170, 150, 150])
+            upper2 = np.array([180, 255, 255])
         # find the colors within the specified boundaries and apply the mask
-        mask1 = cv2.inRange(cv_image, lower1, upper2)    
-        mask2 = cv2.inRange(cv_image, lower1, upper2)
-        mask = cv2.bitwise_or(mask1, mask2)
+            mask1 = cv2.inRange(cv_image, lower1, upper1)    
+            mask2 = cv2.inRange(cv_image, lower2, upper2)
+            mask = cv2.bitwise_or(mask1, mask2)
 
-        kernel = np.ones((3, 3), np.uint8)
-        mask = cv2.erode(mask, kernel, iterations=1)
+            kernel = np.ones((3, 3), np.uint8)
+            mask = cv2.erode(mask, kernel, iterations=1)
+        elif mode == "bgr":
+            cv_image = image_input
+            lower1 = np.array([0, 0, 150])
+            upper1 = np.array([50, 50, 255])
+        # find the colors within the specified boundaries and apply the mask
+            mask = cv2.inRange(cv_image, lower1, upper1) 
+
+            kernel = np.ones((3, 3), np.uint8)
+            mask = cv2.erode(mask, kernel, iterations=1)
 
         num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
     
@@ -78,22 +89,24 @@ class image_converter:
 
         for (cX, cY) in centroids_list[:1]:
             cX, cY = int(cX), int(cY)
-            cX = cX if cX < 400 else 399
-            cY = cY if cY < 640 else 639
             cv2.circle(image_input, (cX, cY), 5, (255, 0, 0), -1)
 
         if len(centroids_list) >= 1:
             (cX, cY) = centroids_list[0]
             cX, cY = int(cX), int(cY)
-            cX = cX if cX < 400 else 399
+            print(cX, cY)
+            cX = int(cX/480.0*399.0)
+            if cX >= 400:
+                cX = 399
             cY = cY if cY < 640 else 639
+            print(cX, cY)
             depth = self.depth_image[cX,cY]
 
             # 计算物体在相机坐标系中的位置,像素坐标系-->相机坐标系
             point_camera = PointStamped()
             point_camera.header.frame_id = data.header.frame_id
-            point_camera.point.x = (cX - self.camera_info.K[2]) * depth / self.camera_info.K[0]
-            point_camera.point.y = (cY - self.camera_info.K[5]) * depth / self.camera_info.K[4]
+            point_camera.point.x = (cY - self.camera_info.K[5]) * depth / self.camera_info.K[4]
+            point_camera.point.y = components[0][4]
             point_camera.point.z = depth
 
             # 使用tf2将点从相机坐标系转换到世界坐标系
@@ -103,7 +116,7 @@ class image_converter:
             
             
             self.target_pub.publish(point_camera)
-            print(point_camera.point.x)
+            print(point_camera.point.x, point_camera.point.y, point_camera.point.z)
 
         # 显示Opencv格式的图像
         cv2.imshow("Image window", image_input)
