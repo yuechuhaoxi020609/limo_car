@@ -27,7 +27,7 @@ class move_to_target:
     def main_move(self, angle, depth, size):
         global res_flag, OD_flag
         near_enough_threshold = 0.03
-        if depth < 500 and depth > 0.0:
+        if size > 20000:
             print('rescue success')
             res_flag = True
             OD_flag = False
@@ -36,8 +36,9 @@ class move_to_target:
             return
         move = Twist()
         Kp = 1
-        move.linear.x = 0.3
+        move.linear.x = 0.1
         move.angular.z = -Kp*angle
+        print("angular.z", angle, move.angular.z)
         self.vel_cmd.publish(move)
         
         
@@ -49,6 +50,7 @@ class random_explore:
         OD_flag = False
         self.very_near = False
         self.data = PointStamped()
+        self.data_time = 0
         self.vel_cmd = rospy.Publisher('cmd_vel', Twist, queue_size=1)
         rospy.Subscriber('/scan', LaserScan, self.check_obstacle)
         rospy.Subscriber('/object_detect_pose', PointStamped, self.object_detected_callback)
@@ -103,8 +105,8 @@ class random_explore:
         # generate a random move
         
         move_forward = Twist()
-        move_forward.linear.x = 0.5
-        # move_forward.angular.z = random.uniform(-2,2)
+        move_forward.linear.x = 0.2
+        move_forward.angular.z = 0
         
         turn_around = Twist()
         # turn a random angle between -90 and 0 degrees
@@ -138,6 +140,7 @@ class random_explore:
                 rate.sleep()
             else:
                 print('Object_there!!!!!!!!')
+                self.data_time += 1
                 x = self.data.point.x
                 size = self.data.point.y
                 depth = self.data.point.z
@@ -147,6 +150,9 @@ class random_explore:
                     angle = 0
                 print('angle and depth are:',angle, depth, size)
                 move_to_target().main_move(angle, depth, size)
+
+                if self.data_time > 10:
+                    OD_flag = False
             #########################################################random explore#######################################
      
     def object_detected_callback(self,data):
@@ -154,7 +160,7 @@ class random_explore:
         rospy.loginfo("Moving to target.....")
         OD_flag = True
         self.data = data
-        
+        self.data_time = 0        
         
             
                 

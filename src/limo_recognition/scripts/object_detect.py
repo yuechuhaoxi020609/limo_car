@@ -100,12 +100,35 @@ class image_converter:
                 cX = 399
             cY = cY if cY < 640 else 639
             print(cX, cY)
-            depth = self.depth_image[cX,cY]
+            if self.depth_image[cX, cY] > 0.1:
+                depth = self.depth_image[cX, cY]
+            else:
+                for i in range(640):
+                    flag = False
+                    for j in range(i):
+                         k = i - j
+                         delta = [[-1, -1], [-1, 1], [1, 1], [1, -1]]
+                         flag2 = False
+                         for d in delta:
+                             x = cX + d[0]*j
+                             y = cY + d[1]*k
+                             if 0 <= x < 400 and 0 <= x < 640 and self.depth_image[x, y] > 0.1:
+                                 depth = self.depth_image[x, y]
+                                 flag, flag2 = True, True
+                                 break
+                         if flag2:
+                             break
+                    if flag:
+                        break
+                    if i == 639:
+                        print("fuck all zero!!!!")
+            # depth = self.depth_image[cX,cY]
 
             # 计算物体在相机坐标系中的位置,像素坐标系-->相机坐标系
             point_camera = PointStamped()
             point_camera.header.frame_id = data.header.frame_id
-            point_camera.point.x = (cY - self.camera_info.K[5]) * depth / self.camera_info.K[4]
+            point_camera.point.x = (cX - self.camera_info.K[2]) * depth / self.camera_info.K[0]
+            # print(cX, self.camera_info.K[2], self.camera_info.K[0], cY, self.camera_info.K[5], self.camera_info.K[4])
             point_camera.point.y = components[0][4]
             point_camera.point.z = depth
 
